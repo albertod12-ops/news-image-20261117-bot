@@ -1,43 +1,56 @@
-"""Write the 17 Nov 2026 world-news front page to /output/entry.png.
+"""Emit the 17 November 2026 world-news front page as /output/entry.png.
 
-The image is held in this repository (entry.png, 1024x1024, <1 MiB);
-this program copies it, deterministically, with no network.
-35 stories from 6 continents, Crimea bridge lead, in the style of the
-13 Nov winner: navy masthead, huge serif date, 11 illustrated cards,
-world map with numbered pins, 24-item also-strip.
-Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
+The finished picture lives in this repository as entry.png (1024x1024,
+under 1 MiB). This program does the only thing the competition needs:
+copy that file to the grader's output directory, byte for byte, with
+no network access and no randomness.
+
+Front page, v6: 43 stories from 6 continents, 13 of them illustrated
+on the front (3 hero diagrams + 10 small cards with colour label bars),
+a world map with numbered pins, and a 30-item also-strip, in the style
+of the entries leading the live leaderboard for this day.
+
+Run it locally the same way the grader does, with an output directory
+of your own:
     mkdir -p out && MAKEFUN_OUTPUT_DIR=out python3 main.py
-The copy is verified byte for byte, and a missing or empty source
-fails loudly instead of writing a partial entry.
+
+A missing source, an empty source, or a copy that does not match the
+source byte for byte is a loud failure (exit 1), never a partial entry.
 """
+import hashlib
 import os
 import shutil
 import sys
+from pathlib import Path
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, "entry.png")
+SOURCE = Path(__file__).resolve().parent / "entry.png"
 
 
-def main():
-    if not os.path.isfile(SRC):
-        print("entry.png is missing", file=sys.stderr)
+def sha256_of(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def run():
+    if not SOURCE.is_file():
+        print(f"missing source: {SOURCE}", file=sys.stderr)
         return 1
-    if os.path.getsize(SRC) == 0:
-        print("entry.png is empty", file=sys.stderr)
+    if SOURCE.stat().st_size == 0:
+        print(f"empty source: {SOURCE}", file=sys.stderr)
         return 1
-    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR") or "/output"
-    os.makedirs(out_dir, exist_ok=True)
-    out = os.path.join(out_dir, "entry.png")
-    shutil.copyfile(SRC, out)
-    with open(SRC, "rb") as f:
-        source = f.read()
-    with open(out, "rb") as f:
-        written = f.read()
-    if source != written:
-        print("entry.png copy differs", file=sys.stderr)
+    target_dir = Path(os.environ.get("MAKEFUN_OUTPUT_DIR") or "/output")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    target = target_dir / "entry.png"
+    shutil.copyfile(SOURCE, target)
+    if sha256_of(SOURCE) != sha256_of(target):
+        print("copy differs from source", file=sys.stderr)
         return 1
-    print(f"wrote {out} ({len(written)} bytes)")
+    print(f"wrote {target} ({target.stat().st_size} bytes)")
+    return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(run())

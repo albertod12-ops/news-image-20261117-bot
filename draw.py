@@ -3,6 +3,7 @@
 Cream front page, huge black serif date, 3 hero diagram cards + 10 small
 cards with coloured label bars, 13 front stories, 43 total, map + also-strip.
 All front-page facts verified 2026-11-18 from Reuters/AP/BBC/UN/WHO searches.
+Built in-session 2026-11-18 by Muse for the @transs123 entry (v6).
 """
 import json
 from PIL import Image, ImageDraw, ImageFont
